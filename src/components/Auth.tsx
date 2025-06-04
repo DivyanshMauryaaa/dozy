@@ -40,15 +40,16 @@ export default function Auth() {
       // Create new profile
       const { error: insertError } = await supabase
         .from('profiles')
-        .insert([
+        .insert(
           {
             id: userId,
             email: userEmail,
             username: username || userEmail.split('@')[0],
             first_name: firstName,
             last_name: lastName,
+            avatar_url: `https://ui-avatars.com/api/?name=${username || userEmail.split('@')[0]}`,
           }
-        ])
+        )
       
       if (insertError) throw insertError
     }
@@ -76,6 +77,14 @@ export default function Auth() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              username: username || email.split('@')[0],
+              first_name: firstName,
+              last_name: lastName,
+              avatar_url: `https://ui-avatars.com/api/?name=${username || email.split('@')[0]}`,
+            },
+          },
         })
         if (error) throw error
         if (data.user) {
@@ -124,9 +133,9 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full space-y-8">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+        {/* <h2 className="text-center text-3xl font-extrabold text-gray-900">
           {mode === 'signin' ? 'Sign in' : 'Sign up'}
-        </h2>
+        </h2> */}
         
         <form className="space-y-6" onSubmit={handleAuth}>
           {error && (
@@ -135,7 +144,7 @@ export default function Auth() {
             </div>
           )}
           
-          <input
+          {/* <input
             type="email"
             placeholder="Email"
             value={email}
@@ -200,25 +209,25 @@ export default function Auth() {
             className="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
           >
             {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
-          </button>
+          </button> */}
           
-          <button
+          {/* <button
             type="button"
             onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
             className="w-full text-sm text-indigo-600 hover:text-indigo-500"
           >
             {mode === 'signin' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
-          </button>
+          </button> */}
 
           <div className="mt-6">
-            <div className="relative">
+            {/* <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
               </div>
-            </div>
+            </div> */}
 
             <button
               type="button"
@@ -244,7 +253,7 @@ export default function Auth() {
                   fill="#EA4335"
                 />
               </svg>
-              Sign in with Google
+              Continue with Google
             </button>
           </div>
         </form>
