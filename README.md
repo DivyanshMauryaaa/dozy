@@ -39,9 +39,9 @@
 
   <h2>🧪 Tech Stack</h2>
   <ul>
-    <li>Frontend: React + Tailwind CSS</li>
-    <li>Backend: Supabase / Firebase (TBD)</li>
-    <li>AI: OpenAI API (for smart planning)</li>
+    <li>Frontend: Next 15 + Tailwind CSS</li>
+    <li>Backend: Supabase</li>
+    <li>AI: Mistral API via AI/ML API App</li>
   </ul>
 
   <h2>🧠 Built For</h2>
