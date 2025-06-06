@@ -1,8 +1,9 @@
-import { Inter } from 'next/font/google'
+import { Merriweather, Poppins } from 'next/font/google'
 import './globals.css'
 import Providers from '@/components/Providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const merriweather = Merriweather({ subsets: ['latin'], weight: ['400', '700'], display: 'swap' })
+const poppins = Poppins({ subsets: ['latin'], weight: ['400', '700'], display: 'swap' })
 
 export default function RootLayout({
   children,
@@ -11,7 +12,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${poppins.className} p-5`} cz-shortcut-listen="true">
         <Providers>
           {children}
         </Providers>

@@ -1,47 +1,22 @@
 'use client'
 
 import { useTheme } from '@/context/ThemeContext'
-import { useState } from 'react'
-
-interface Task {
-  id: string
-  title: string
-  description: string
-  dueDate: string
-  priority: 'low' | 'medium' | 'high'
-  status: 'todo' | 'in-progress' | 'completed'
-}
+import { useState, useEffect, useRef, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { containerVariants, listItemVariants, modalVariants, hoverScale, tapScale } from '@/utils/animations'
+import supabase from '@/lib/supabase'
+import { useSession } from '@/components/SessionProvider'
 
 export default function TasksPage() {
   const { colorScheme } = useTheme()
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Complete Project Documentation',
-      description: 'Write comprehensive documentation for the project including setup instructions and API references.',
-      dueDate: '2024-03-20',
-      priority: 'high',
-      status: 'todo'
-    },
-    {
-      id: '2',
-      title: 'Review Code Changes',
-      description: 'Review and approve pending pull requests from team members.',
-      dueDate: '2024-03-18',
-      priority: 'medium',
-      status: 'in-progress'
-    },
-    {
-      id: '3',
-      title: 'Update Dependencies',
-      description: 'Update project dependencies to their latest stable versions.',
-      dueDate: '2024-03-15',
-      priority: 'low',
-      status: 'completed'
-    }
-  ])
+  const [tasks, setTasks] = useState<any>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const modalRef = useRef<HTMLDialogElement>(null)
 
-  const [newTask, setNewTask] = useState<Partial<Task>>({
+  const session = useSession();
+  const user = session.user;
+
+  const [newTask, setNewTask] = useState<any>({
     title: '',
     description: '',
     dueDate: '',
@@ -49,32 +24,36 @@ export default function TasksPage() {
     status: 'todo'
   })
 
-  const handleAddTask = () => {
-    if (!newTask.title) return
 
-    const task: Task = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: newTask.title,
-      description: newTask.description || '',
-      dueDate: newTask.dueDate || new Date().toISOString().split('T')[0],
-      priority: newTask.priority || 'medium',
-      status: 'todo'
-    }
+  const loadTasks = async () => {
+    setIsLoading(true)
 
-    setTasks([...tasks, task])
-    setNewTask({
-      title: '',
-      description: '',
-      dueDate: '',
-      priority: 'medium',
-      status: 'todo'
-    })
+    const { data: tasks, error } = await supabase.from('tasks').select('*').eq('user_id', user?.id);
+    setTasks(tasks);
+
+    setIsLoading(false)
+
   }
 
-  const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ))
+
+  // Simulate loading tasks (replace with Supabase later)
+  useEffect(() => {
+    loadTasks()
+  }, [])
+
+  const handleAddTask = async (task: any) => {
+    if (!newTask.title) return
+    await supabase.from('tasks').insert(task);
+
+    loadTasks();
+  }
+
+  const handleStatusChange = async (taskId: string, newStatus: string) => {
+    await supabase.from('tasks').update({
+      status: newStatus,
+    }).eq('id', taskId)
+
+    loadTasks();
   }
 
   const getPriorityColor = (priority: Task['priority']) => {
@@ -90,7 +69,7 @@ export default function TasksPage() {
     }
   }
 
-  const getStatusColor = (status: Task['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'todo':
         return colorScheme.muted
@@ -103,182 +82,225 @@ export default function TasksPage() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: colorScheme.primary }} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 
+        <h1
           className="text-2xl font-bold"
           style={{ color: colorScheme.textOnBackground }}
         >
           Tasks
         </h1>
-        <button
-          onClick={() => document.getElementById('new-task-modal')?.showModal()}
+        <motion.button
+          onClick={() => modalRef.current?.showModal()}
           className="px-4 py-2 rounded-md transition-colors"
-          style={{ 
+          style={{
             backgroundColor: colorScheme.primary,
             color: colorScheme.textOnPrimary
           }}
+          whileHover={hoverScale}
+          whileTap={tapScale}
         >
           Add New Task
-        </button>
+        </motion.button>
       </div>
 
       {/* Task Lists */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        variants={containerVariants}
+        initial="initial"
+        animate="animate"
+      >
         {/* Todo */}
-        <div 
+        <div
           className="p-4 rounded-lg"
           style={{ backgroundColor: colorScheme.background }}
         >
-          <h2 
+          <h2
             className="text-lg font-semibold mb-4"
             style={{ color: colorScheme.textOnBackground }}
           >
             To Do
           </h2>
-          <div className="space-y-4">
-            {tasks
-              .filter(task => task.status === 'todo')
-              .map(task => (
-                <div
-                  key={task.id}
-                  className="p-4 rounded-lg transition-colors"
-                  style={{ 
-                    backgroundColor: colorScheme.muted,
-                    color: colorScheme.textOnMuted
-                  }}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium">{task.title}</h3>
-                    <span className={getPriorityColor(task.priority)}>
-                      {task.priority}
-                    </span>
-                  </div>
-                  <p className="text-sm mb-2">{task.description}</p>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Due: {task.dueDate}</span>
-                    <button
-                      onClick={() => handleStatusChange(task.id, 'in-progress')}
-                      className="px-2 py-1 rounded transition-colors"
-                      style={{ 
-                        backgroundColor: colorScheme.primary,
-                        color: colorScheme.textOnPrimary
-                      }}
-                    >
-                      Start
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <motion.div className="space-y-4">
+              {tasks
+                .filter((task: { status: string }) => task.status === 'todo')
+                .map((task: any) => (
+                  <motion.div
+                    key={task.id}
+                    className="p-4 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: colorScheme.muted,
+                      color: colorScheme.textOnMuted
+                    }}
+                    variants={listItemVariants}
+                    layout
+                    whileHover={hoverScale}
+                    whileTap={tapScale}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-medium">{task.title}</h3>
+                      <span className={getPriorityColor(task.priority)}>
+                        {task.priority}
+                      </span>
+                    </div>
+                    <p className="text-sm mb-2">{task.description}</p>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Due: {task.dueDate}</span>
+                      <motion.button
+                        onClick={() => handleStatusChange(task.id, 'in-progress')}
+                        className="px-2 py-1 rounded transition-colors"
+                        style={{
+                          backgroundColor: colorScheme.primary,
+                          color: colorScheme.textOnPrimary
+                        }}
+                        whileHover={hoverScale}
+                        whileTap={tapScale}
+                      >
+                        Start
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* In Progress */}
-        <div 
+        <div
           className="p-4 rounded-lg"
           style={{ backgroundColor: colorScheme.background }}
         >
-          <h2 
+          <h2
             className="text-lg font-semibold mb-4"
             style={{ color: colorScheme.textOnBackground }}
           >
             In Progress
           </h2>
-          <div className="space-y-4">
-            {tasks
-              .filter(task => task.status === 'in-progress')
-              .map(task => (
-                <div
-                  key={task.id}
-                  className="p-4 rounded-lg transition-colors"
-                  style={{ 
-                    backgroundColor: colorScheme.muted,
-                    color: colorScheme.textOnMuted
-                  }}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium">{task.title}</h3>
-                    <span className={getPriorityColor(task.priority)}>
-                      {task.priority}
-                    </span>
-                  </div>
-                  <p className="text-sm mb-2">{task.description}</p>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Due: {task.dueDate}</span>
-                    <button
-                      onClick={() => handleStatusChange(task.id, 'completed')}
-                      className="px-2 py-1 rounded transition-colors"
-                      style={{ 
-                        backgroundColor: colorScheme.secondary,
-                        color: colorScheme.textOnSecondary
-                      }}
-                    >
-                      Complete
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <motion.div className="space-y-4">
+              {tasks
+                .filter((task: { status: string }) => task.status === 'in-progress')
+                .map((task: any) => (
+                  <motion.div
+                    key={task.id}
+                    className="p-4 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: colorScheme.muted,
+                      color: colorScheme.textOnMuted
+                    }}
+                    variants={listItemVariants}
+                    layout
+                    whileHover={hoverScale}
+                    whileTap={tapScale}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-medium">{task.title}</h3>
+                      <span className={getPriorityColor(task.priority)}>
+                        {task.priority}
+                      </span>
+                    </div>
+                    <p className="text-sm mb-2">{task.description}</p>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Due: {task.dueDate}</span>
+                      <motion.button
+                        onClick={() => handleStatusChange(task.id, 'completed')}
+                        className="px-2 py-1 rounded transition-colors"
+                        style={{
+                          backgroundColor: colorScheme.secondary,
+                          color: colorScheme.textOnSecondary
+                        }}
+                        whileHover={hoverScale}
+                        whileTap={tapScale}
+                      >
+                        Complete
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Completed */}
-        <div 
+        <div
           className="p-4 rounded-lg"
           style={{ backgroundColor: colorScheme.background }}
         >
-          <h2 
+          <h2
             className="text-lg font-semibold mb-4"
             style={{ color: colorScheme.textOnBackground }}
           >
             Completed
           </h2>
-          <div className="space-y-4">
-            {tasks
-              .filter(task => task.status === 'completed')
-              .map(task => (
-                <div
-                  key={task.id}
-                  className="p-4 rounded-lg transition-colors"
-                  style={{ 
-                    backgroundColor: colorScheme.muted,
-                    color: colorScheme.textOnMuted
-                  }}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium">{task.title}</h3>
-                    <span className={getPriorityColor(task.priority)}>
-                      {task.priority}
-                    </span>
-                  </div>
-                  <p className="text-sm mb-2">{task.description}</p>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Due: {task.dueDate}</span>
-                    <button
-                      onClick={() => handleStatusChange(task.id, 'todo')}
-                      className="px-2 py-1 rounded transition-colors"
-                      style={{ 
-                        backgroundColor: colorScheme.muted,
-                        color: colorScheme.textOnMuted
-                      }}
-                    >
-                      Reopen
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <motion.div className="space-y-4">
+              {tasks
+                .filter((task: { status: string }) => task.status === 'completed')
+                .map((task: any) => (
+                  <motion.div
+                    key={task.id}
+                    className="p-4 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: colorScheme.muted,
+                      color: colorScheme.textOnMuted
+                    }}
+                    variants={listItemVariants}
+                    layout
+                    whileHover={hoverScale}
+                    whileTap={tapScale}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-medium">{task.title}</h3>
+                      <span className={getPriorityColor(task.priority)}>
+                        {task.priority}
+                      </span>
+                    </div>
+                    <p className="text-sm mb-2">{task.description}</p>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Due: {task.dueDate}</span>
+                      <motion.button
+                        onClick={() => handleStatusChange(task.id, 'todo')}
+                        className="px-2 py-1 rounded transition-colors"
+                        style={{
+                          backgroundColor: colorScheme.muted,
+                          color: colorScheme.textOnMuted
+                        }}
+                        whileHover={hoverScale}
+                        whileTap={tapScale}
+                      >
+                        Reopen
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* New Task Modal */}
-      <dialog id="new-task-modal" className="p-6 rounded-lg backdrop:bg-black/50">
-        <div 
+      <dialog ref={modalRef} className="modal">
+        <motion.div
           className="p-6 rounded-lg"
           style={{ backgroundColor: colorScheme.background }}
+          variants={modalVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
         >
-          <h2 
+          <h2
             className="text-xl font-bold mb-4"
             style={{ color: colorScheme.textOnBackground }}
           >
@@ -286,7 +308,7 @@ export default function TasksPage() {
           </h2>
           <div className="space-y-4">
             <div>
-              <label 
+              <label
                 className="block mb-2"
                 style={{ color: colorScheme.textOnBackground }}
               >
@@ -297,7 +319,7 @@ export default function TasksPage() {
                 value={newTask.title}
                 onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                 className="w-full p-2 rounded"
-                style={{ 
+                style={{
                   backgroundColor: colorScheme.muted,
                   color: colorScheme.textOnMuted,
                   border: 'none'
@@ -305,7 +327,7 @@ export default function TasksPage() {
               />
             </div>
             <div>
-              <label 
+              <label
                 className="block mb-2"
                 style={{ color: colorScheme.textOnBackground }}
               >
@@ -315,7 +337,7 @@ export default function TasksPage() {
                 value={newTask.description}
                 onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 className="w-full p-2 rounded"
-                style={{ 
+                style={{
                   backgroundColor: colorScheme.muted,
                   color: colorScheme.textOnMuted,
                   border: 'none'
@@ -323,7 +345,7 @@ export default function TasksPage() {
               />
             </div>
             <div>
-              <label 
+              <label
                 className="block mb-2"
                 style={{ color: colorScheme.textOnBackground }}
               >
@@ -334,7 +356,7 @@ export default function TasksPage() {
                 value={newTask.dueDate}
                 onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
                 className="w-full p-2 rounded"
-                style={{ 
+                style={{
                   backgroundColor: colorScheme.muted,
                   color: colorScheme.textOnMuted,
                   border: 'none'
@@ -342,7 +364,7 @@ export default function TasksPage() {
               />
             </div>
             <div>
-              <label 
+              <label
                 className="block mb-2"
                 style={{ color: colorScheme.textOnBackground }}
               >
@@ -352,7 +374,7 @@ export default function TasksPage() {
                 value={newTask.priority}
                 onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as Task['priority'] })}
                 className="w-full p-2 rounded"
-                style={{ 
+                style={{
                   backgroundColor: colorScheme.muted,
                   color: colorScheme.textOnMuted,
                   border: 'none'
@@ -364,32 +386,44 @@ export default function TasksPage() {
               </select>
             </div>
             <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => document.getElementById('new-task-modal')?.close()}
+              <motion.button
+                onClick={() => modalRef.current?.close()}
                 className="px-4 py-2 rounded transition-colors"
-                style={{ 
+                style={{
                   backgroundColor: colorScheme.muted,
                   color: colorScheme.textOnMuted
                 }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
               >
                 Cancel
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={() => {
-                  handleAddTask()
-                  document.getElementById('new-task-modal')?.close()
+                  handleAddTask(
+                    {
+                      title: newTask.title,
+                      description: newTask.description,
+                      user_id: user?.id,
+                      priority: newTask.priority,
+                      due: newTask.due.toString(),
+                    }
+                  )
+                  modalRef.current?.close()
                 }}
                 className="px-4 py-2 rounded transition-colors"
-                style={{ 
+                style={{
                   backgroundColor: colorScheme.primary,
                   color: colorScheme.textOnPrimary
                 }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
               >
                 Add Task
-              </button>
+              </motion.button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </dialog>
     </div>
   )

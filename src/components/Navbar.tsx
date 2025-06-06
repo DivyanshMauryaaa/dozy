@@ -30,7 +30,7 @@ export default function Navbar() {
           <input
             type="text"
             placeholder="Search..."
-            className="w-full pl-10 pr-4 py-2 rounded-lg transition-colors"
+            className="w-full pl-10 pr-4 py-2 rounded-lg transition-colors focus:outline-none"
             style={{ 
               backgroundColor: colorScheme.muted,
               color: colorScheme.textOnMuted,
