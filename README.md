@@ -55,12 +55,12 @@
     <li>Just wants a cute, chill way to get stuff done</li>
   </ul>
 
-  <h2>📬 Stay Updated</h2>
-  <p>
+  <!--<h2>📬 Stay Updated</h2>-->
+<!--   <p>
     Sign up for beta access or follow the journey:
     <br/>
     <a href="mailto:hello@dozy.app">hello@dozy.app</a>
-  </p>
+  </p> -->
 
   <footer style="margin-top: 2rem; font-size: 0.9em; color: #888;">
     © 2025 Dozy. Built with focus and chill.
