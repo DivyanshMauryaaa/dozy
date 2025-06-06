@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, listItemVariants, modalVariants, hoverScale, tapScale } from '@/utils/animations'
 import supabase from '@/lib/supabase'
 import { useSession } from '@/components/SessionProvider'
+import { Trash2 } from 'lucide-react'
 
 export default function TasksPage() {
   const { colorScheme } = useTheme()
@@ -21,9 +22,25 @@ export default function TasksPage() {
     description: '',
     dueDate: '',
     priority: 'medium',
-    status: 'todo'
+    status: 'todo',
+    tags: [],
   })
 
+  const [showFields, setShowFields] = useState({
+    description: false,
+    dueDate: false,
+    priority: false,
+    tags: false,
+  })
+
+  const [tagInput, setTagInput] = useState('')
+
+  const toggleField = (field: keyof typeof showFields) => {
+    setShowFields(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }))
+  }
 
   const loadTasks = async () => {
     setIsLoading(true)
@@ -35,17 +52,61 @@ export default function TasksPage() {
 
   }
 
-
   // Simulate loading tasks (replace with Supabase later)
   useEffect(() => {
-    loadTasks()
-  }, [])
+    if (user) {
+      loadTasks()
+    }
+  }, [user])
+
+  const handleAddTag = () => {
+    if (tagInput.trim() && !newTask.tags.includes(tagInput.trim())) {
+      setNewTask((prev: typeof newTask) => ({
+        ...prev,
+        tags: [...prev.tags, tagInput.trim()]
+      }))
+      setTagInput('')
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setNewTask((prev: typeof newTask) => ({
+      ...prev,
+      tags: prev.tags.filter((tag: string) => tag !== tagToRemove)
+    }))
+  }
 
   const handleAddTask = async (task: any) => {
-    if (!newTask.title) return
-    await supabase.from('tasks').insert(task);
+    try {
+      if (!newTask.title) return
+      const { error } = await supabase.from('tasks').insert(task);
 
-    loadTasks();
+      if (error) {
+        console.error('Error adding task:', error)
+        throw new Error(error.message)
+      }
+
+      loadTasks();
+      // Reset form
+      setNewTask({
+        title: '',
+        description: '',
+        dueDate: '',
+        priority: 'medium',
+        status: 'todo',
+        tags: [],
+      })
+      setShowFields({
+        description: false,
+        dueDate: false,
+        priority: false,
+        tags: false,
+      })
+    } catch (error) {
+      console.error('Error in handleAddTask:', error)
+      // You might want to show this error to the user using a toast or alert
+      alert(error instanceof Error ? error.message : 'Failed to add task')
+    }
   }
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
@@ -149,6 +210,21 @@ export default function TasksPage() {
                     whileHover={hoverScale}
                     whileTap={tapScale}
                   >
+                    <motion.button
+                      onClick={async () => {
+                        await supabase.from('tasks').delete().eq('id', task.id);
+                        loadTasks();
+                      }}
+                      className="transition-colors cursor-pointer"
+                      style={{
+                        color: 'red'
+                      }}
+                      whileHover={hoverScale}
+                      whileTap={tapScale}
+                    >
+                      <Trash2 size={16}/>
+                    </motion.button>
+
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-medium">{task.title}</h3>
                       <span className={getPriorityColor(task.priority)}>
@@ -160,7 +236,7 @@ export default function TasksPage() {
                       <span>Due: {task.dueDate}</span>
                       <motion.button
                         onClick={() => handleStatusChange(task.id, 'in-progress')}
-                        className="px-2 py-1 rounded transition-colors"
+                        className="px-2 py-1 rounded transition-colors cursor-pointer"
                         style={{
                           backgroundColor: colorScheme.primary,
                           color: colorScheme.textOnPrimary
@@ -216,7 +292,7 @@ export default function TasksPage() {
                       <span>Due: {task.dueDate}</span>
                       <motion.button
                         onClick={() => handleStatusChange(task.id, 'completed')}
-                        className="px-2 py-1 rounded transition-colors"
+                        className="px-2 py-1 rounded transition-colors cursor-pointer"
                         style={{
                           backgroundColor: colorScheme.secondary,
                           color: colorScheme.textOnSecondary
@@ -272,9 +348,9 @@ export default function TasksPage() {
                       <span>Due: {task.dueDate}</span>
                       <motion.button
                         onClick={() => handleStatusChange(task.id, 'todo')}
-                        className="px-2 py-1 rounded transition-colors"
+                        className="px-2 py-1 rounded transition-colors cursor-pointer"
                         style={{
-                          backgroundColor: colorScheme.muted,
+                          backgroundColor: colorScheme.background,
                           color: colorScheme.textOnMuted
                         }}
                         whileHover={hoverScale}
@@ -293,7 +369,7 @@ export default function TasksPage() {
       {/* New Task Modal */}
       <dialog ref={modalRef} className="modal">
         <motion.div
-          className="p-6 rounded-lg"
+          className="p-6 rounded-lg max-w-md mx-auto"
           style={{ backgroundColor: colorScheme.background }}
           variants={modalVariants}
           initial="initial"
@@ -301,7 +377,7 @@ export default function TasksPage() {
           exit="exit"
         >
           <h2
-            className="text-xl font-bold mb-4"
+            className="text-xl font-bold mb-4 text-center"
             style={{ color: colorScheme.textOnBackground }}
           >
             Add New Task
@@ -312,7 +388,7 @@ export default function TasksPage() {
                 className="block mb-2"
                 style={{ color: colorScheme.textOnBackground }}
               >
-                Title
+                Title *
               </label>
               <input
                 type="text"
@@ -324,68 +400,182 @@ export default function TasksPage() {
                   color: colorScheme.textOnMuted,
                   border: 'none'
                 }}
+                placeholder="Enter task title"
+                required
               />
             </div>
-            <div>
-              <label
-                className="block mb-2"
+
+            <div className="space-y-2">
+              <motion.button
+                type="button"
+                onClick={() => toggleField('description')}
+                className="flex items-center space-x-2 text-sm"
                 style={{ color: colorScheme.textOnBackground }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
               >
-                Description
-              </label>
-              <textarea
-                value={newTask.description}
-                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                className="w-full p-2 rounded"
-                style={{
-                  backgroundColor: colorScheme.muted,
-                  color: colorScheme.textOnMuted,
-                  border: 'none'
-                }}
-              />
+                <span>{showFields.description ? 'Remove Description' : 'Add Description'}</span>
+                <span>{showFields.description ? '−' : '+'}</span>
+              </motion.button>
+
+              {showFields.description && (
+                <div>
+                  <textarea
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    className="w-full p-2 rounded"
+                    style={{
+                      backgroundColor: colorScheme.muted,
+                      color: colorScheme.textOnMuted,
+                      border: 'none'
+                    }}
+                    placeholder="Enter task description"
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <label
-                className="block mb-2"
+
+            <div className="space-y-2">
+              <motion.button
+                type="button"
+                onClick={() => toggleField('dueDate')}
+                className="flex items-center space-x-2 text-sm"
                 style={{ color: colorScheme.textOnBackground }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
               >
-                Due Date
-              </label>
-              <input
-                type="date"
-                value={newTask.dueDate}
-                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                className="w-full p-2 rounded"
-                style={{
-                  backgroundColor: colorScheme.muted,
-                  color: colorScheme.textOnMuted,
-                  border: 'none'
-                }}
-              />
+                <span>{showFields.dueDate ? 'Remove Due Date' : 'Add Due Date'}</span>
+                <span>{showFields.dueDate ? '−' : '+'}</span>
+              </motion.button>
+
+              {showFields.dueDate && (
+                <div>
+                  <input
+                    type="date"
+                    value={newTask.dueDate}
+                    onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value.toString() })}
+                    className="w-full p-2 rounded"
+                    style={{
+                      backgroundColor: colorScheme.muted,
+                      color: colorScheme.textOnMuted,
+                      border: 'none'
+                    }}
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <label
-                className="block mb-2"
+
+            <div className="space-y-2">
+              <motion.button
+                type="button"
+                onClick={() => toggleField('priority')}
+                className="flex items-center space-x-2 text-sm"
                 style={{ color: colorScheme.textOnBackground }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
               >
-                Priority
-              </label>
-              <select
-                value={newTask.priority}
-                onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as Task['priority'] })}
-                className="w-full p-2 rounded"
-                style={{
-                  backgroundColor: colorScheme.muted,
-                  color: colorScheme.textOnMuted,
-                  border: 'none'
-                }}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
+                <span>{showFields.priority ? 'Remove Priority' : 'Add Priority'}</span>
+                <span>{showFields.priority ? '−' : '+'}</span>
+              </motion.button>
+
+              {showFields.priority && (
+                <div>
+                  <select
+                    value={newTask.priority}
+                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as Task['priority'] })}
+                    className="w-full p-2 rounded"
+                    style={{
+                      backgroundColor: colorScheme.muted,
+                      color: colorScheme.textOnMuted,
+                      border: 'none'
+                    }}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              )}
             </div>
-            <div className="flex justify-end space-x-2">
+
+            <div className="space-y-2">
+              <motion.button
+                type="button"
+                onClick={() => toggleField('tags')}
+                className="flex items-center space-x-2 text-sm"
+                style={{ color: colorScheme.textOnBackground }}
+                whileHover={hoverScale}
+                whileTap={tapScale}
+              >
+                <span>{showFields.tags ? 'Remove Tags' : 'Add Tags'}</span>
+                <span>{showFields.tags ? '−' : '+'}</span>
+              </motion.button>
+
+              {showFields.tags && (
+                <div className="space-y-2">
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddTag()
+                        }
+                      }}
+                      className="flex-1 p-2 rounded"
+                      style={{
+                        backgroundColor: colorScheme.muted,
+                        color: colorScheme.textOnMuted,
+                        border: 'none'
+                      }}
+                      placeholder="Enter tag and press Enter"
+                    />
+                    <motion.button
+                      type="button"
+                      onClick={handleAddTag}
+                      className="px-3 py-2 rounded"
+                      style={{
+                        backgroundColor: colorScheme.primary,
+                        color: colorScheme.textOnPrimary
+                      }}
+                      whileHover={hoverScale}
+                      whileTap={tapScale}
+                    >
+                      Add
+                    </motion.button>
+                  </div>
+
+                  {newTask.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {newTask.tags.map((tag: string) => (
+                        <motion.div
+                          key={tag}
+                          className="flex items-center space-x-1 px-2 py-1 rounded-full text-sm"
+                          style={{
+                            backgroundColor: colorScheme.primary,
+                            color: colorScheme.textOnPrimary
+                          }}
+                          whileHover={hoverScale}
+                          whileTap={tapScale}
+                        >
+                          <span>{tag}</span>
+                          <button
+                            onClick={() => handleRemoveTag(tag)}
+                            className="ml-1 hover:text-red-200"
+                          >
+                            ×
+                          </button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-center space-x-2">
               <motion.button
                 onClick={() => modalRef.current?.close()}
                 className="px-4 py-2 rounded transition-colors"
@@ -403,10 +593,14 @@ export default function TasksPage() {
                   handleAddTask(
                     {
                       title: newTask.title,
-                      description: newTask.description,
+                      description: newTask.description || "",
                       user_id: user?.id,
-                      priority: newTask.priority,
-                      due: newTask.due.toString(),
+                      priority: newTask.priority || "medium",
+                      due: newTask.dueDate || null,
+                      status: newTask.status || "todo",
+                      tags: newTask.tags || [],
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
                     }
                   )
                   modalRef.current?.close()
