@@ -2,11 +2,11 @@
 
 import { useTheme } from '@/context/ThemeContext'
 import { useState, useEffect, useRef, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, color } from 'framer-motion'
 import { containerVariants, listItemVariants, modalVariants, hoverScale, tapScale } from '@/utils/animations'
 import supabase from '@/lib/supabase'
 import { useSession } from '@/components/SessionProvider'
-import { Bell, Trash2 } from 'lucide-react'
+import { Bell, Edit, Trash2 } from 'lucide-react'
 
 export default function TasksPage() {
   const { colorScheme } = useTheme()
@@ -479,13 +479,13 @@ export default function TasksPage() {
   )
 }
 
-function TaskColumn({ 
-  title, 
-  tasks, 
-  status, 
-  colorScheme, 
-  onDelete, 
-  onStatusChange, 
+function TaskColumn({
+  title,
+  tasks,
+  status,
+  colorScheme,
+  onDelete,
+  onStatusChange,
   getPriorityColor,
   loadTasks  // Add this prop
 }: {
@@ -533,20 +533,24 @@ function TaskColumn({
                 layout
                 whileHover={hoverScale}
               >
-                <motion.button
-                  onClick={async () => {
-                    await supabase.from('tasks').delete().eq('id', task.id);
-                    loadTasks();
-                  }}
-                  className="transition-colors cursor-pointer"
-                  style={{
-                    color: 'red'
-                  }}
-                  whileHover={hoverScale}
-                  whileTap={tapScale}
-                >
-                  <Trash2 size={16} />
-                </motion.button>
+                <div className='py-3 flex gap-3'>
+
+                  <motion.button
+                    onClick={async () => {
+                      await supabase.from('tasks').delete().eq('id', task.id);
+                      loadTasks();
+                    }}
+                    className="transition-colors cursor-pointer"
+                    style={{
+                      color: 'red'
+                    }}
+                    whileHover={hoverScale}
+                    whileTap={tapScale}
+                  >
+                    <Trash2 size={16} />
+                  </motion.button>
+
+                </div>
 
                 {/** TASK DETAILS */}
                 <div className="flex justify-between items-start mb-2">
@@ -571,7 +575,7 @@ function TaskColumn({
                           <div
                             className="mt-2 p-2 rounded-md text-sm font-medium text-red-600 bg-red-200 flex gap-2"
                           >
-                            <Bell size={20}/> Due Today!
+                            <Bell size={20} /> Due Today!
                           </div>
                         )}
                     </>
