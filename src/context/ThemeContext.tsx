@@ -16,21 +16,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [currentPalette, setCurrentPalette] = useState('ocean')
   const [colorScheme, setColorScheme] = useState<ColorScheme>(colorPalettes.ocean)
 
-  useEffect(() => {
-    // Load theme settings from localStorage
-    const savedPalette = localStorage.getItem('currentPalette')
-
-    if (savedPalette) {
-      setCurrentPalette(savedPalette)
-      setColorScheme(colorPalettes[savedPalette])
-    }
-  }, [])
-
-  useEffect(() => {
-    // Save theme settings to localStorage
-    localStorage.setItem('currentPalette', currentPalette)
-  }, [currentPalette])
-
   const handleSetCurrentPalette = (palette: string) => {
     setCurrentPalette(palette)
     setColorScheme(colorPalettes[palette])
@@ -54,4 +39,4 @@ export function useTheme() {
     throw new Error('useTheme must be used within a ThemeProvider')
   }
   return context
-} 
+}

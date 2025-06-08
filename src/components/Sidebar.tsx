@@ -25,7 +25,6 @@ const menuItems = [
   { name: 'Calendar', icon: Calendar, path: '/calendar' },
   { name: 'Music', icon: Music, path: '/music' },
   { name: 'Focus Session', icon: Timer, path: '/focus' },
-  { name: 'Files', icon: Folder, path: '/files' },
   { name: 'Settings', icon: Settings, path: '/settings' },
 ]
 
