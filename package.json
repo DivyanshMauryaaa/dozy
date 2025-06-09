@@ -23,7 +23,8 @@
     "slate": "^0.115.1",
     "slate-history": "^0.113.1",
     "slate-react": "^0.114.2",
-    "styled-components": "^6.1.18"
+    "styled-components": "^6.1.18",
+    "turndown": "^7.2.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

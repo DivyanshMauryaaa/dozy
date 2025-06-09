@@ -1,10 +1,12 @@
 'use client';
 
+import { Editor } from '@/components/RichText/markdown/editor';
 import { useSession } from '@/components/SessionProvider';
 import { useTheme } from '@/context/ThemeContext';
 import supabase from '@/lib/supabase';
 import { Trash2 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
+import { MarkdownRenderer } from '@/components/RichText/markdown/rendererComp';
 
 interface Note {
     id: string;
@@ -170,6 +172,7 @@ const Notes = () => {
                     <div className="text-center text-gray-500">
                         <p className="text-xl">No notes found.</p>
                         <p className="mt-2">Start creating your first note!</p>
+
                     </div>
                 </div>
             ) : (
@@ -312,11 +315,20 @@ const Notes = () => {
                                             </button>
                                         </div>
 
-                                        <textarea
+                                        {/* <textarea
                                             value={editedContent}
                                             onChange={(e) => setEditedContent(e.target.value)}
                                             className="w-full h-[calc(100vh-300px)] p-4 rounded-lg focus:outline-none"
                                         />
+                                         */}
+
+                                        <div className="prose prose-blue max-w-none whitespace-pre-wrap">
+                                            <Editor
+                                                initialContent={editedContent}
+                                                onChange={setEditedContent}
+                                                className="w-full h-[calc(100vh-300px)] p-4 rounded-lg focus:outline-none"
+                                            />
+                                        </div>
                                     </div>
                                 ) : (
                                     <div>
@@ -336,7 +348,9 @@ const Notes = () => {
                                             Created on {new Date(selectedNote.created_at).toLocaleString()}
                                         </p>
                                         <div className="prose prose-blue max-w-none whitespace-pre-wrap">
-                                            {selectedNote.content}
+                                            <MarkdownRenderer>
+                                                {selectedNote.content}
+                                            </MarkdownRenderer>
                                         </div>
                                     </div>
                                 )}
