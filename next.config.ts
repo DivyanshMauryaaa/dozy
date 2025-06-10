@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  reactStrictMode: false, // Add this line
+  experimental: {
+    // suppressHydrationWarning: true
+  }
 };
 
 export default nextConfig;

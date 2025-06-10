@@ -13,7 +13,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${raleway.className} p-5`} cz-shortcut-listen="true">
+      <body className={`${raleway.className} p-5`} cz-shortcut-listen="true" suppressHydrationWarning
+      >
         <Providers>
           {children}
         </Providers>

@@ -27,6 +27,7 @@ export default function ClientLayout({
       style={{ 
         backgroundColor: colorScheme.background
       }}
+      suppressHydrationWarning
     >
       {/* Sidebar */}
       <Sidebar />

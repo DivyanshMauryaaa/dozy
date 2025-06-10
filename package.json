@@ -9,6 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@remirror/pm": "^3.0.1",
+    "@remirror/react": "^3.0.2",
+    "@remirror/react-editors": "^2.0.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.9",
@@ -17,24 +22,28 @@
     "is-hotkey": "^0.2.0",
     "lucide-react": "^0.513.0",
     "next": "15.3.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-hot-toast": "^2.5.2",
+    "remirror": "^3.0.2",
     "slate": "^0.115.1",
     "slate-history": "^0.113.1",
     "slate-react": "^0.114.2",
-    "styled-components": "^6.1.18",
-    "turndown": "^7.2.0"
+    "styled-components": "^6.1.18"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/turndown": "^5.0.5",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
+    "markdown-it": "^14.1.0",
     "tailwindcss": "^4",
+    "turndown": "^7.2.0",
     "typescript": "^5"
   }
 }
