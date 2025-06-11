@@ -21,6 +21,19 @@
   max-width: 64rem;
 }
 
+[contenteditable]:empty:before {
+    opacity: 0.5;
+    cursor: text;
+}
+
+[contenteditable]:empty:focus::before {
+    opacity: 0.5;
+}
+
+[contenteditable]:not(:empty)::before {
+    display: none;
+}
+
 .modal::backdrop {
   background: rgba(0, 0, 0, 0.5);
 }

@@ -11,17 +11,16 @@ import {
   FileText, 
   Music, 
   Timer, 
-  Folder, 
   Settings,
-  ChevronLeft,
   Menu,
-  Calendar
+  Calendar,
+  FileIcon
 } from 'lucide-react'
 
 const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-  { name: 'Notes', icon: FileText, path: '/notes' },
+  { name: 'Pages', icon: FileText, path: '/pages' },
   { name: 'Calendar', icon: Calendar, path: '/calendar' },
   { name: 'Music', icon: Music, path: '/music' },
   { name: 'Focus Session', icon: Timer, path: '/focus' },
